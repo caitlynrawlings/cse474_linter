@@ -2,16 +2,18 @@ import sys
 import os
 import re
 
-def check_file_header(file, author_name=None):
-    lines = [line.strip('\n') for line in file.readlines()]
-    
+# Checks the first four lines of file for header comment
+# Parameters:
+#   - file: open file to check
+#   - author_name: name to check for the Author comment. If None then checks not author is not empty.
+#       Defaults to None
+def check_file_header(lines, file_name, author_name=None):
     # Check the first line
     if len(lines) < 4:
         return ["Error: File should have at least four lines in it for header comment."]
     
     res = []
-    file_name_only = os.path.basename(file.name)
-    expected_first_line = f"// Filename: {file_name_only}"
+    expected_first_line = f"// Filename: {file_name}"
     if lines[0] != expected_first_line:
         res += [f"Line 1: Expected '{expected_first_line}' as the first comment line. Got '{lines[0]}'"]
 
@@ -48,8 +50,10 @@ def check_file_header(file, author_name=None):
 
     return res
 
-# checks above setup except for the header
-def check_above_setup(file):
+# Checks above setup except for the header
+# Parameters:
+#   - file: open file to check
+def check_above_setup(lines):
     setup_found : bool = False
     loop_found : bool = False
 
@@ -63,13 +67,12 @@ def check_above_setup(file):
     func_def_found : bool = False
 
     # Regular expression patterns to match global variables
-    global_var_pattern = re.compile(r"^\s*(int|float|double|char|bool|long|short|unsigned|static\s+\w+|\w+\s*\*)\s+\w+(\s*\[.*\])?\s*(=\s*[^;]+)?;\s*(//.*)?$")
+    global_var_pattern = re.compile(r"^\s*(int|float|double|char|bool|long|short|unsigned|static\s+\w+|\w+\s*\**)\s(\**)+\w+(\s*\[.*\])?\s*(=\s*[^;]+)?;\s*(//.*)?$")
     # Regular expression patterns to match function prototypes
     function_prototype_pattern = re.compile(r"^\s*\w+(\s*\*+\s*)?\s+\w+\s*\([^;]*\)")
     # Regular expression patterns to match function declarations
     function_declaration_pattern = re.compile(r"^\s*\w+(\s*\*+\s*)?\s+\w+\s*\(")
 
-    lines = [line.rstrip('\n') for line in file.readlines()]
     lines = lines[4:] # skip first four lines because they were checked in header check
     res = []
     # check line by line
@@ -111,12 +114,15 @@ def check_above_setup(file):
         # This get checks for each line (both before and after setup() found)
         if func_name_found:
             if not func_def_found:
+                # expect the next line after function name comment to be definition name comment
                 if not line.startswith("// Definition: "):
                     res += [f"Line {num + 5}: Expected line to start with '// Definition: ' to describe function"]
+                    func_name_found = False
                 else:
                     func_def_found = True
+                    # todo: add check for description not being empty
             elif function_declaration_pattern.match(line):
-                # both name and function found
+                # both function comments and function found
                 # reset variables
                 func_def_found = False
                 func_name_found = False
@@ -130,10 +136,10 @@ def check_above_setup(file):
             # else could be comments of more of the description so don't do anything
         elif line.startswith("// Name: "):
             # get the rest of the line and cut off trailing whitespace and save that to func_name
-            func_name_found = True
-        elif function_declaration_pattern.match(line):
             func_name = line[len("// Name: "):].strip()
-            res += [f"Line {num + 5}: Expected line to start with '// Name: ' and '// Definition: ' comments for function"]
+            func_name_found = True
+        elif function_declaration_pattern.match(line) and not function_prototype_pattern.match(line):
+            res += [f"Line {num + 5}: Expected to find '// Name: ' and '// Definition: ' comments for function"]
 
 
         # check each line for trailing whitespace
@@ -146,8 +152,9 @@ def check_above_setup(file):
 def check_file(file_path, author_name=None):
     try:
         with open(file_path, 'r') as file:
-            errors = check_file_header(file, author_name)
-            errors += check_above_setup(file)
+            lines = [line.strip('\n') for line in file.readlines()]
+            errors = check_file_header(lines, os.path.basename(file.name), author_name)
+            errors += check_above_setup(lines)
             if len(errors) == 0:
                 return f"{file_path} : No linter errors found"
             else:

@@ -1,3 +1,5 @@
+# Journal
+
 todos:
 
 - test the function that checks the rest of the file other than the header
@@ -10,20 +12,14 @@ todos:
 
 - add check for indentations (spaces before line must be divisable by either 2 or 4)
 
+- refactor to add check_trailing and check_indentations function
+
 current limitations:  
 
-this block only records an error if there is one of these without having the corresponding section header above it somewhere in the code but does not handle if the case that the code is in the wrong section
-`elif (not includes_found) and line.startswith("#include"):  
-    res += [f"Line {num + 5}: Expected '// ================== Includes ==================' comment to define section"]  
-elif (not defines_found) and line.startswith("#define"):  
-    res += [f"Line {num + 5}: Expected '// =================== Macros ===================' comment to define section"]  
-elif (not globals_found) and global_var_pattern.match(line):  
-    res += [f"Line {num + 5}: Expected '// ============== Global Variables ==============' comment to define section"]  
-elif (not prototypes_found) and function_prototype_pattern.match(line):  
-    res += [f"Line {num + 5}: Expected '// ============= Function Prototypes ============' comment to define section"]`  
+- only records an error if there is something that should be in an includes, macros, global variables or function prototype sections without having the corresponding section header above it somewhere in the code but does not handle if the case that the code is in the wrong section
+- requires exact match for section seperators (exact number of ====)
 
-
-tests
-    - header
-        - correct no name param
-        - correct with name parameter
+## Progress
+6/19 - Repo created and header check logic completed  
+6/20 - Tests for header check created. Started the check logic for the rest of the file and left some todos for finishing it. 
+6/21 - Tests for the rest of file logic created
