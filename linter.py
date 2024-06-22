@@ -4,7 +4,8 @@ import re
 
 # Checks the first four lines of file for header comment
 # Parameters:
-#   - file: open file to check
+#   - lines: arrays of strings. each line is line from a file in order
+#   - file_name: file name
 #   - author_name: name to check for the Author comment. If None then checks not author is not empty.
 #       Defaults to None
 def check_file_header(lines, file_name, author_name=None):
@@ -52,7 +53,7 @@ def check_file_header(lines, file_name, author_name=None):
 
 # Checks above setup except for the header
 # Parameters:
-#   - file: open file to check
+#   - lines: arrays of strings. each line is line from a file in order
 def check_above_setup(lines):
     setup_found : bool = False
     loop_found : bool = False
@@ -67,11 +68,11 @@ def check_above_setup(lines):
     func_def_found : bool = False
 
     # Regular expression patterns to match global variables
-    global_var_pattern = re.compile(r"^\s*(int|float|double|char|bool|long|short|unsigned|static\s+\w+|\w+\s*\**)\s(\**)+\w+(\s*\[.*\])?\s*(=\s*[^;]+)?;\s*(//.*)?$")
+    global_var_pattern = re.compile(r"^\s*(int|float|double|char|bool|long|short|unsigned|static\s+\w+(\w*\d*)*|\w*\s*\**)\s(\**)+\w+(\s*\[.*\])?\s*(=\s*[^;]+)?;\s*(//.*)?$")
     # Regular expression patterns to match function prototypes
-    function_prototype_pattern = re.compile(r"^\s*\w+(\s*\*+\s*)?\s+\w+\s*\([^;]*\)")
+    function_prototype_pattern = re.compile(r"^\s*\w+(\w*\d*)*(\s*\**+\s*\**)?\s+\w+\s*\([^;]*\)[^;]*;")
     # Regular expression patterns to match function declarations
-    function_declaration_pattern = re.compile(r"^\s*\w+(\s*\*+\s*)?\s+\w+\s*\(")
+    function_declaration_pattern = re.compile(r"(^\s*)(\w+(?: \w*\d*)*)(\s*\**+\s*\**)?\s+(\w+)\s*\(")
 
     lines = lines[4:] # skip first four lines because they were checked in header check
     res = []
@@ -115,8 +116,8 @@ def check_above_setup(lines):
         if func_name_found:
             if not func_def_found:
                 # expect the next line after function name comment to be definition name comment
-                if not line.startswith("// Definition: "):
-                    res += [f"Line {num + 5}: Expected line to start with '// Definition: ' to describe function"]
+                if not line.startswith("// Description: "):
+                    res += [f"Line {num + 5}: Expected line to start with '// Description: ' to describe function"]
                     func_name_found = False
                 else:
                     func_def_found = True
@@ -129,17 +130,17 @@ def check_above_setup(lines):
 
                 # check if the func_name mathes the function name in the function declaration
                 match = function_declaration_pattern.match(line)
-                func_name_in_declaration = match.group(3) if match else None
+                func_name_in_declaration = match.group(4) if match else None
                 if func_name_in_declaration != func_name:
                     res += [f"Line {num + 5}: Function name '{func_name_in_declaration}' does not match the declared function name '{func_name}'"]
 
             # else could be comments of more of the description so don't do anything
         elif line.startswith("// Name: "):
-            # get the rest of the line and cut off trailing whitespace and save that to func_name
+            # get the rest of the line and cut off trailing whitespace and save that to func_name 
             func_name = line[len("// Name: "):].strip()
             func_name_found = True
-        elif function_declaration_pattern.match(line) and not function_prototype_pattern.match(line):
-            res += [f"Line {num + 5}: Expected to find '// Name: ' and '// Definition: ' comments for function"]
+        elif function_declaration_pattern.match(line) and not function_prototype_pattern.match(line) and (not line.startswith("void loop()")) and (not line.startswith("void setup()")):
+            res += [f"Line {num + 5}: Expected to find '// Name: ' and '// Description: ' comments for function"]
 
 
         # check each line for trailing whitespace

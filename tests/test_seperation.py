@@ -45,3 +45,7 @@ def test_no_prototype_seperator():
 def test_define_in_wrong_section():
     result = subprocess.run(['python', 'linter.py', './tests/test_files/seperation_tests/define_after_includes.ino'], capture_output=True, text=True)
     assert "./tests/test_files/seperation_tests/define_after_includes.ino : No linter errors found\n" == result.stdout
+
+def test_all_sections(): 
+    result = subprocess.run(['python', 'linter.py', './tests/test_files/seperation_tests/all_sections.ino'], capture_output=True, text=True)
+    assert "./tests/test_files/seperation_tests/all_sections.ino : No linter errors found\n" == result.stdout
