@@ -63,6 +63,8 @@ def check_above_setup(lines):
     globals_found : bool = False
     prototypes_found : bool = False
 
+    above_functions : bool = True
+
     func_name_found : bool = False
     func_name = ""
     func_def_found : bool = False
@@ -81,6 +83,7 @@ def check_above_setup(lines):
         if not setup_found:
             if line.startswith("void setup()"):
                 setup_found = True
+                above_functions = False
 
             # only need to do the two checks below before setup is found
 
@@ -89,9 +92,9 @@ def check_above_setup(lines):
                 res += [f"Line {num + 5}: Expected '// ================== Includes ==================' comment to define section"]
             elif (not defines_found) and line.startswith("#define"):
                 res += [f"Line {num + 5}: Expected '// =================== Macros ===================' comment to define section"]
-            elif (not globals_found) and global_var_pattern.match(line):
+            elif above_functions and (not globals_found) and global_var_pattern.match(line):
                 res += [f"Line {num + 5}: Expected '// ============== Global Variables ==============' comment to define section"]
-            elif (not prototypes_found) and function_prototype_pattern.match(line):
+            elif above_functions and (not prototypes_found) and function_prototype_pattern.match(line):
                 res += [f"Line {num + 5}: Expected '// ============= Function Prototypes ============' comment to define section"]
             
             # Update flags based on comments indicating sections
@@ -118,6 +121,7 @@ def check_above_setup(lines):
                 # expect the next line after function name comment to be definition name comment
                 if not line.startswith("// Description: "):
                     res += [f"Line {num + 5}: Expected line to start with '// Description: ' to describe function"]
+                    above_functions = False
                     func_def_found = True # setting this to true makes it so it will still compare the function name when the function declaration is found
                         # func_name_found = False # this is the code that in place of the previous line before and it causes the name to not be compared to the 
                         # name comment if there is a line between the name comment and the line with the start of the function declaration
@@ -126,11 +130,12 @@ def check_above_setup(lines):
                         match = function_declaration_pattern.match(line)
                         func_name_in_declaration = match.group(4) if match else None
                         if func_name_in_declaration != func_name:
-                            res += [f"Line {num + 5}: Function name '{func_name_in_declaration}' does not match the declared function name '{func_name}'"]
+                            res += [f"Line {num + 5}: Function name '{func_name_in_declaration}' does not match the commented function name '{func_name}'"]
                         func_def_found = False
                         func_name_found = False
                 else:
                     func_def_found = True
+                    above_functions = False
                     # check if description empty
                     if line.strip() == "// Description:":
                         res += [f"Line {num + 5}: Function description cannot be empty"]
@@ -144,15 +149,17 @@ def check_above_setup(lines):
                 match = function_declaration_pattern.match(line)
                 func_name_in_declaration = match.group(4) if match else None
                 if func_name_in_declaration != func_name:
-                    res += [f"Line {num + 5}: Function name '{func_name_in_declaration}' does not match the declared function name '{func_name}'"]
+                    res += [f"Line {num + 5}: Function name '{func_name_in_declaration}' does not match the commented function name '{func_name}'"]
 
             # else could be comments of more of the description so don't do anything
         elif line.startswith("// Name: "):
             # get the rest of the line and cut off trailing whitespace and save that to func_name 
             func_name = line[len("// Name: "):].strip()
             func_name_found = True
+            above_functions = False
         elif function_declaration_pattern.match(line) and not function_prototype_pattern.match(line) and (not line.startswith("void loop()")) and (not line.startswith("void setup()")):
             res += [f"Line {num + 5}: Expected to find '// Name: ' and '// Description: ' comments for function"]
+            above_functions = False
 
 
         # check each line for trailing whitespace
