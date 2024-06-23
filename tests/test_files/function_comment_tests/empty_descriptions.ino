@@ -1,17 +1,11 @@
-// Filename: two_function_before_setup.ino
+// Filename: empty_descriptions.ino
 // Author: John Doe
 // Date: 2024-06-19
 // Description: This is a test file for the linter.
 
 // Name: updateCounter
-// Description: This is the function description
+// Description:  
 void updateCounter() {
-    // function stuff
-}
-
-// Name: anotherFunction
-// Description: This is the function description
-int** anotherFunction() {
     // function stuff
 }
 

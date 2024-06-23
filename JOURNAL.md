@@ -19,7 +19,9 @@ current limitations:
 - only records an error if there is something that should be in an includes, macros, global variables or function prototype sections without having the corresponding section header above it somewhere in the code but does not handle if the case that the code is in the wrong section
 - requires exact match for section seperators (exact number of ====)
 
+
 ## Progress
 6/19 - Repo created and header check logic completed  
 6/20 - Tests for header check created. Started the check logic for the rest of the file and left some todos for finishing it. 
-6/21 - Tests for the rest of file logic created
+6/21 - Tests for the checking of name and description comments for functions other than setup() and loop() started
+6/22 - 

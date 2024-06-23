@@ -118,17 +118,29 @@ def check_above_setup(lines):
                 # expect the next line after function name comment to be definition name comment
                 if not line.startswith("// Description: "):
                     res += [f"Line {num + 5}: Expected line to start with '// Description: ' to describe function"]
-                    func_name_found = False
+                    func_def_found = True # setting this to true makes it so it will still compare the function name when the function declaration is found
+                        # func_name_found = False # this is the code that in place of the previous line before and it causes the name to not be compared to the 
+                        # name comment if there is a line between the name comment and the line with the start of the function declaration
+                    if function_declaration_pattern.match(line):
+                        # check if the func_name matches the function name in the function declaration
+                        match = function_declaration_pattern.match(line)
+                        func_name_in_declaration = match.group(4) if match else None
+                        if func_name_in_declaration != func_name:
+                            res += [f"Line {num + 5}: Function name '{func_name_in_declaration}' does not match the declared function name '{func_name}'"]
+                        func_def_found = False
+                        func_name_found = False
                 else:
                     func_def_found = True
-                    # todo: add check for description not being empty
+                    # check if description empty
+                    if line.strip() == "// Description:":
+                        res += [f"Line {num + 5}: Function description cannot be empty"]
             elif function_declaration_pattern.match(line):
                 # both function comments and function found
                 # reset variables
                 func_def_found = False
                 func_name_found = False
 
-                # check if the func_name mathes the function name in the function declaration
+                # check if the func_name matches the function name in the function declaration
                 match = function_declaration_pattern.match(line)
                 func_name_in_declaration = match.group(4) if match else None
                 if func_name_in_declaration != func_name:
